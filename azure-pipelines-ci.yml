@@ -1,0 +1,57 @@
+trigger:
+  branches:
+    include:
+      - Dev
+      - sandbox
+      - main
+
+pr: none
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  imageRepository: auth_service
+  dockerRegistryServiceConnection: az-acr
+  tag: $(Build.SourceBranchName)-$(Build.BuildId)
+
+steps:
+
+- checkout: self
+
+# Build Image
+- script: |
+    docker build -t $(imageRepository):$(tag) .
+  displayName: Build Docker Image
+
+# Install Trivy
+- script: |
+    sudo apt-get update
+    sudo apt-get install -y wget
+
+    wget https://github.com/aquasecurity/trivy/releases/download/v0.71.0/trivy_0.71.0_Linux-64bit.deb
+
+    sudo dpkg -i trivy_0.71.0_Linux-64bit.deb
+  displayName: Install Trivy
+
+# Scan Image
+- script: |
+    trivy image $(imageRepository):$(tag)
+  displayName: Trivy Scan
+
+# Login to ACR
+- task: Docker@2
+  displayName: Login to ACR
+  inputs:
+    command: login
+    containerRegistry: $(dockerRegistryServiceConnection)
+
+# Tag image for ACR
+- script: |
+    docker tag $(imageRepository):$(tag) flipkart.azurecr.io/$(imageRepository):$(tag)
+  displayName: Tag Image
+
+# Push Image
+- script: |
+    docker push flipkart.azurecr.io/$(imageRepository):$(tag)
+  displayName: Push Image
