@@ -10,7 +10,7 @@ pool:
 
 variables:
   imageRepository: auth_service
-  dockerRegistryServiceConnection: azure-dev-connection
+  dockerRegistryServiceConnection: az-acr
   tag: $(Build.BuildId)
 
 steps:
