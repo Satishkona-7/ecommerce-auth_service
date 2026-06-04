@@ -2,6 +2,8 @@ trigger:
   branches:
     include:
       - Dev
+      - sandbox
+      - main
 
 pr: none
 
@@ -11,7 +13,7 @@ pool:
 variables:
   imageRepository: auth_service
   dockerRegistryServiceConnection: az-acr
-  tag: $(Build.BuildId)
+  tag: $(Build.SourceBranchName)-$(Build.BuildId)
 
 steps:
 
@@ -42,19 +44,14 @@ steps:
 #       auth_service:$(Build.BuildId)
 #   displayName: Trivy Scan
 - script: |
-    trivy image auth_service:$(Build.BuildId)
+    trivy image auth_service:$(tag)
   displayName: Trivy Scan
 
 - task: Docker@2
   displayName: Push Image
   inputs:
-    command: buildAndPush
-    repository: $(imageRepository)
-
-    containerRegistry: $(dockerRegistryServiceConnection)
-
-    Dockerfile: Dockerfile
-
+    containerRegistry: '$(dockerRegistryServiceConnection)'
+    repository: '$(imageRepository)'
+    command: 'push'
     tags: |
       $(tag)
-      latest
