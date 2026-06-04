@@ -1,0 +1,54 @@
+trigger:
+  branches:
+    include:
+      - Dev
+
+pr: none
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  imageRepository: auth_service
+  dockerRegistryServiceConnection: azure-dev-connection
+  tag: $(Build.BuildId)
+
+steps:
+
+- checkout: self
+
+- task: Docker@2
+  displayName: Build Docker Image
+  inputs:
+    command: build
+    repository: $(imageRepository)
+    Dockerfile: Dockerfile
+    tags: |
+      $(tag)
+
+- script: |
+    sudo apt-get update
+    sudo apt-get install wget -y
+
+    wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.64.1_Linux-64bit.deb
+
+    sudo dpkg -i trivy_0.64.1_Linux-64bit.deb
+  displayName: Install Trivy
+
+- script: |
+    trivy image auth-service:$(Build.BuildId)
+  displayName: Trivy Scan
+
+- task: Docker@2
+  displayName: Push Image
+  inputs:
+    command: buildAndPush
+    repository: $(imageRepository)
+
+    containerRegistry: $(dockerRegistryServiceConnection)
+
+    Dockerfile: Dockerfile
+
+    tags: |
+      $(tag)
+      latest
