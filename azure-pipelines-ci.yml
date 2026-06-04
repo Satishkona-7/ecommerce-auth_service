@@ -48,10 +48,10 @@ steps:
 
 # Tag image for ACR
 - script: |
-    docker tag $(imageRepository):$(tag) <YOUR_ACR_LOGIN_SERVER>/$(imageRepository):$(tag)
+    docker tag $(imageRepository):$(tag) flipkart.azurecr.io/$(imageRepository):$(tag)
   displayName: Tag Image
 
 # Push Image
 - script: |
-    docker push <YOUR_ACR_LOGIN_SERVER>/$(imageRepository):$(tag)
+    docker push flipkart.azurecr.io/$(imageRepository):$(tag)
   displayName: Push Image
