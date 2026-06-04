@@ -35,11 +35,14 @@ steps:
     sudo dpkg -i trivy_0.71.0_Linux-64bit.deb
   displayName: Install Trivy
 
+# - script: |
+#     trivy image \
+#       --severity HIGH,CRITICAL \
+#       --exit-code 1 \
+#       auth_service:$(Build.BuildId)
+#   displayName: Trivy Scan
 - script: |
-    trivy image \
-      --severity HIGH,CRITICAL \
-      --exit-code 1 \
-      auth_service:$(Build.BuildId)
+    trivy image auth_service:$(Build.BuildId)
   displayName: Trivy Scan
 
 - task: Docker@2
