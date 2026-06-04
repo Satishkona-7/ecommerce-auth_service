@@ -51,7 +51,7 @@ steps:
   displayName: Push Image
   inputs:
     containerRegistry: '$(dockerRegistryServiceConnection)'
-    repository: '$(imageRepository)'
+    repository: $(acrLoginServer)/$(imageRepository)
     command: 'push'
     tags: |
       $(tag)
