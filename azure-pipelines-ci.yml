@@ -22,11 +22,11 @@ steps:
 - task: Docker@2
   displayName: Build Docker Image
   inputs:
-    command: build
-    repository: $(imageRepository)
-    Dockerfile: Dockerfile
-    tags: |
-      $(tag)
+    containerRegistry: 'az-acr'
+    repository: '$(imageRepository)'
+    command: 'build'
+    Dockerfile: 'Dockerfile'
+    tags: '$(tag)'
 
 - script: |
     sudo apt-get update
@@ -50,8 +50,7 @@ steps:
 - task: Docker@2
   displayName: Push Image
   inputs:
-    containerRegistry: '$(dockerRegistryServiceConnection)'
-    repository: $(acrLoginServer)/$(imageRepository)
+    containerRegistry: 'az-acr'
+    repository: '$(imageRepository)'
     command: 'push'
-    tags: |
-      $(tag)
+    tags: '$(tag)'
