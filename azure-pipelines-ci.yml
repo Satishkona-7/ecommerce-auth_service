@@ -19,15 +19,12 @@ steps:
 
 - checkout: self
 
-- task: Docker@2
+# Build Image
+- script: |
+    docker build -t $(imageRepository):$(tag) .
   displayName: Build Docker Image
-  inputs:
-    containerRegistry: 'az-acr'
-    repository: '$(imageRepository)'
-    command: 'build'
-    Dockerfile: 'Dockerfile'
-    tags: '$(tag)'
 
+# Install Trivy
 - script: |
     sudo apt-get update
     sudo apt-get install -y wget
@@ -37,20 +34,24 @@ steps:
     sudo dpkg -i trivy_0.71.0_Linux-64bit.deb
   displayName: Install Trivy
 
-# - script: |
-#     trivy image \
-#       --severity HIGH,CRITICAL \
-#       --exit-code 1 \
-#       auth_service:$(Build.BuildId)
-#   displayName: Trivy Scan
+# Scan Image
 - script: |
-    trivy image auth_service:$(tag)
+    trivy image $(imageRepository):$(tag)
   displayName: Trivy Scan
 
+# Login to ACR
 - task: Docker@2
-  displayName: Push Image
+  displayName: Login to ACR
   inputs:
-    containerRegistry: 'az-acr'
-    repository: '$(imageRepository)'
-    command: 'push'
-    tags: '$(tag)'
+    command: login
+    containerRegistry: $(dockerRegistryServiceConnection)
+
+# Tag image for ACR
+- script: |
+    docker tag $(imageRepository):$(tag) <YOUR_ACR_LOGIN_SERVER>/$(imageRepository):$(tag)
+  displayName: Tag Image
+
+# Push Image
+- script: |
+    docker push <YOUR_ACR_LOGIN_SERVER>/$(imageRepository):$(tag)
+  displayName: Push Image
