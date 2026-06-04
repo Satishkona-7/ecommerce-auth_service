@@ -36,7 +36,10 @@ steps:
   displayName: Install Trivy
 
 - script: |
-    trivy image auth-service:$(Build.BuildId)
+    trivy image \
+      --severity HIGH,CRITICAL \
+      --exit-code 1 \
+      auth_service:$(Build.BuildId)
   displayName: Trivy Scan
 
 - task: Docker@2
