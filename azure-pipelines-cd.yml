@@ -5,7 +5,7 @@ pr: none
 resources:
   pipelines:
     - pipeline: ci
-      source: ecommerce_auth_ci_pipeline
+      source: Ecommerce_auth_ci_pipeline
       trigger: true
 
 pool:
