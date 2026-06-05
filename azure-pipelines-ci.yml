@@ -55,3 +55,12 @@ steps:
 - script: |
     docker push flipkart.azurecr.io/$(imageRepository):$(tag)
   displayName: Push Image
+# Save image tag for CD pipeline
+- script: |
+    echo "$(tag)" > image-tag.txt
+  displayName: Save Image Tag
+
+# Publish artifact
+- publish: image-tag.txt
+  artifact: image-tag
+  displayName: Publish Image Tag Artifact
