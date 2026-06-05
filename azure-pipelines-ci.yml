@@ -1,66 +1,100 @@
-trigger:
-  branches:
-    include:
-      - Dev
-      - sandbox
-      - main
+trigger: none
 
 pr: none
+
+resources:
+  pipelines:
+    - pipeline: ci
+      source: Ecommerce_auth_ci_pipeline
+      trigger: true
 
 pool:
   vmImage: ubuntu-latest
 
-variables:
-  imageRepository: auth_service
-  dockerRegistryServiceConnection: az-acr
-  tag: $(Build.SourceBranchName)-$(Build.BuildId)
+stages:
+  - stage: Deploy
+    displayName: Deploy Application
 
-steps:
+    jobs:
+      - deployment: DeployAuthService
+        displayName: Deploy Auth Service
+        environment: ecommerce
 
-- checkout: self
+        strategy:
+          runOnce:
+            deploy:
+              steps:
 
-# Build Image
-- script: |
-    docker build -t $(imageRepository):$(tag) .
-  displayName: Build Docker Image
+                - download: ci
+                  artifact: image-tag
 
-# Install Trivy
-- script: |
-    sudo apt-get update
-    sudo apt-get install -y wget
+                - script: |
+                    IMAGE=$(cat $(Pipeline.Workspace)/ci/image-tag/image-tag.txt)
 
-    wget https://github.com/aquasecurity/trivy/releases/download/v0.71.0/trivy_0.71.0_Linux-64bit.deb
+                    echo "Image = $IMAGE"
 
-    sudo dpkg -i trivy_0.71.0_Linux-64bit.deb
-  displayName: Install Trivy
+                    echo "##vso[task.setvariable variable=IMAGE_NAME]$IMAGE"
+                  displayName: Read Image Reference
 
-# Scan Image
-- script: |
-    trivy image $(imageRepository):$(tag)
-  displayName: Trivy Scan
+                - script: |
+                    BRANCH="$(resources.pipeline.ci.sourceBranch)"
 
-# Login to ACR
-- task: Docker@2
-  displayName: Login to ACR
-  inputs:
-    command: login
-    containerRegistry: $(dockerRegistryServiceConnection)
+                    echo "Triggered from branch: $BRANCH"
 
-# Tag image for ACR
-- script: |
-    docker tag $(imageRepository):$(tag) flipkart.azurecr.io/$(imageRepository):$(tag)
-  displayName: Tag Image
+                    if [ "$BRANCH" = "refs/heads/Dev" ]; then
+                      NAMESPACE="ecommerce-dev"
+                    elif [ "$BRANCH" = "refs/heads/sandbox" ]; then
+                      NAMESPACE="ecommerce-sb"
+                    elif [ "$BRANCH" = "refs/heads/main" ]; then
+                      NAMESPACE="ecommerce-prod"
+                    else
+                      echo "Unsupported branch: $BRANCH"
+                      exit 1
+                    fi
 
-# Push Image
-- script: |
-    docker push flipkart.azurecr.io/$(imageRepository):$(tag)
-  displayName: Push Image
-# Save image tag for CD pipeline
-- script: |
-    echo "flipkart.azurecr.io/$(imageRepository):$(tag)" > image-tag.txt
-  displayName: Save Image Reference
+                    echo "Namespace = $NAMESPACE"
 
-# Publish artifact
-- publish: image-tag.txt
-  artifact: image-tag
-  displayName: Publish Image Tag Artifact
+                    echo "##vso[task.setvariable variable=NAMESPACE]$NAMESPACE"
+                  displayName: Set Namespace Based On Branch
+
+                - script: |
+                    sed -i "s|IMAGE_PLACEHOLDER|$(IMAGE_NAME)|g" deploymentfile/auth-deployment.yaml
+
+                    cat deploymentfile/auth-deployment.yaml
+                  displayName: Replace Image
+
+                - task: Kubernetes@1
+                  displayName: Deploy External Secret
+                  inputs:
+                    connectionType: Kubernetes Service Connection
+                    kubernetesServiceEndpoint: kubernetes-sc
+                    namespace: $(NAMESPACE)
+                    command: apply
+                    arguments: -f deploymentfile/auth-external-secret.yaml
+
+                - task: Kubernetes@1
+                  displayName: Deploy Service
+                  inputs:
+                    connectionType: Kubernetes Service Connection
+                    kubernetesServiceEndpoint: kubernetes-sc
+                    namespace: $(NAMESPACE)
+                    command: apply
+                    arguments: -f deploymentfile/auth-service.yaml
+
+                - task: Kubernetes@1
+                  displayName: Deploy Deployment
+                  inputs:
+                    connectionType: Kubernetes Service Connection
+                    kubernetesServiceEndpoint: kubernetes-sc
+                    namespace: $(NAMESPACE)
+                    command: apply
+                    arguments: -f deploymentfile/auth-deployment.yaml
+
+                - task: Kubernetes@1
+                  displayName: Verify Rollout
+                  inputs:
+                    connectionType: Kubernetes Service Connection
+                    kubernetesServiceEndpoint: kubernetes-sc
+                    namespace: $(NAMESPACE)
+                    command: rollout
+                    arguments: status deployment/auth-service --timeout=300s
