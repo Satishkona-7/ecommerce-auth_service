@@ -18,7 +18,7 @@ stages:
     jobs:
       - deployment: DeployAuthService
         displayName: Deploy Auth Service
-        environment: ecommerce
+        environment: ecommerce-dev
 
         strategy:
           runOnce:
