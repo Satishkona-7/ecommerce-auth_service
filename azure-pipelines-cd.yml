@@ -11,8 +11,6 @@ resources:
 pool:
   vmImage: ubuntu-latest
 
-variables:
-  - group: auth-service-dev
 
 stages:
   - stage: Deploy_Dev
