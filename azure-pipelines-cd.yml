@@ -48,7 +48,7 @@ stages:
                     echo "Triggered from branch: $BRANCH"
 
                     if [ "$BRANCH" = "refs/heads/Dev" ]; then
-                      NAMESPACE="default"
+                      NAMESPACE="ecommerce"
                     elif [ "$BRANCH" = "refs/heads/sandbox" ]; then
                       NAMESPACE="ecommerce-sb"
                     elif [ "$BRANCH" = "refs/heads/main" ]; then
