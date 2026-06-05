@@ -33,7 +33,7 @@ stages:
                     echo "================="
                     ls -R
                   displayName: Debug Files
-                  
+
                 - script: |
                     IMAGE=$(cat $(Pipeline.Workspace)/ci/image-tag/image-tag.txt)
 
@@ -48,7 +48,7 @@ stages:
                     echo "Triggered from branch: $BRANCH"
 
                     if [ "$BRANCH" = "refs/heads/Dev" ]; then
-                      NAMESPACE="ecommerce"
+                      NAMESPACE="default"
                     elif [ "$BRANCH" = "refs/heads/sandbox" ]; then
                       NAMESPACE="ecommerce-sb"
                     elif [ "$BRANCH" = "refs/heads/main" ]; then
@@ -69,14 +69,14 @@ stages:
                     cat deploymentfile/auth-deployment.yaml
                   displayName: Replace Image
 
-                - task: Kubernetes@1
-                  displayName: Deploy External Secret
-                  inputs:
-                    connectionType: Kubernetes Service Connection
-                    kubernetesServiceEndpoint: kubernetes-sc
-                    namespace: $(NAMESPACE)
-                    command: apply
-                    arguments: -f deploymentfile/auth-external-secret.yaml
+                # - task: Kubernetes@1
+                #   displayName: Deploy External Secret
+                #   inputs:
+                #     connectionType: Kubernetes Service Connection
+                #     kubernetesServiceEndpoint: kubernetes-sc
+                #     namespace: $(NAMESPACE)
+                #     command: apply
+                #     arguments: -f deploymentfile/auth-external-secret.yaml
 
                 - task: Kubernetes@1
                   displayName: Deploy Service
@@ -87,20 +87,20 @@ stages:
                     command: apply
                     arguments: -f deploymentfile/auth-service.yaml
 
-                - task: Kubernetes@1
-                  displayName: Deploy Deployment
-                  inputs:
-                    connectionType: Kubernetes Service Connection
-                    kubernetesServiceEndpoint: kubernetes-sc
-                    namespace: $(NAMESPACE)
-                    command: apply
-                    arguments: -f deploymentfile/auth-deployment.yaml
+                # - task: Kubernetes@1
+                #   displayName: Deploy Deployment
+                #   inputs:
+                #     connectionType: Kubernetes Service Connection
+                #     kubernetesServiceEndpoint: kubernetes-sc
+                #     namespace: $(NAMESPACE)
+                #     command: apply
+                #     arguments: -f deploymentfile/auth-deployment.yaml
 
-                - task: Kubernetes@1
-                  displayName: Verify Rollout
-                  inputs:
-                    connectionType: Kubernetes Service Connection
-                    kubernetesServiceEndpoint: kubernetes-sc
-                    namespace: $(NAMESPACE)
-                    command: rollout
-                    arguments: status deployment/auth-service --timeout=300s
+                # - task: Kubernetes@1
+                #   displayName: Verify Rollout
+                #   inputs:
+                #     connectionType: Kubernetes Service Connection
+                #     kubernetesServiceEndpoint: kubernetes-sc
+                #     namespace: $(NAMESPACE)
+                #     command: rollout
+                #     arguments: status deployment/auth-service --timeout=300s
