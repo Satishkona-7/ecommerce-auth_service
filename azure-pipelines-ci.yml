@@ -1,9 +1,10 @@
-trigger:
-  branches:
-    include:
-      - Dev
-      - sandbox
-      - main
+# trigger:
+#   branches:
+#     include:
+#       - Dev
+#       - sandbox
+#       - main
+trigger: none
 
 pr: none
 

@@ -24,10 +24,16 @@ stages:
           runOnce:
             deploy:
               steps:
-
+                - checkout: self
                 - download: ci
                   artifact: image-tag
 
+                - script: |
+                    pwd
+                    echo "================="
+                    ls -R
+                  displayName: Debug Files
+                  
                 - script: |
                     IMAGE=$(cat $(Pipeline.Workspace)/ci/image-tag/image-tag.txt)
 
@@ -42,7 +48,7 @@ stages:
                     echo "Triggered from branch: $BRANCH"
 
                     if [ "$BRANCH" = "refs/heads/Dev" ]; then
-                      NAMESPACE="ecommerce-dev"
+                      NAMESPACE="ecommerce"
                     elif [ "$BRANCH" = "refs/heads/sandbox" ]; then
                       NAMESPACE="ecommerce-sb"
                     elif [ "$BRANCH" = "refs/heads/main" ]; then
