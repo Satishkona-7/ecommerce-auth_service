@@ -11,15 +11,14 @@ resources:
 pool:
   vmImage: ubuntu-latest
 
-
 stages:
-  - stage: Deploy_Dev
-    displayName: Deploy To Dev
+  - stage: Deploy
+    displayName: Deploy Application
 
     jobs:
       - deployment: DeployAuthService
         displayName: Deploy Auth Service
-        environment: ecommerce-dev
+        environment: ecommerce
 
         strategy:
           runOnce:
@@ -36,6 +35,27 @@ stages:
 
                     echo "##vso[task.setvariable variable=IMAGE_NAME]$IMAGE"
                   displayName: Read Image Reference
+
+                - script: |
+                    BRANCH="$(resources.pipeline.ci.sourceBranch)"
+
+                    echo "Triggered from branch: $BRANCH"
+
+                    if [ "$BRANCH" = "refs/heads/Dev" ]; then
+                      NAMESPACE="ecommerce-dev"
+                    elif [ "$BRANCH" = "refs/heads/sandbox" ]; then
+                      NAMESPACE="ecommerce-sb"
+                    elif [ "$BRANCH" = "refs/heads/main" ]; then
+                      NAMESPACE="ecommerce-prod"
+                    else
+                      echo "Unsupported branch: $BRANCH"
+                      exit 1
+                    fi
+
+                    echo "Namespace = $NAMESPACE"
+
+                    echo "##vso[task.setvariable variable=NAMESPACE]$NAMESPACE"
+                  displayName: Set Namespace Based On Branch
 
                 - script: |
                     sed -i "s|IMAGE_PLACEHOLDER|$(IMAGE_NAME)|g" deploymentfile/auth-deployment.yaml
@@ -69,3 +89,12 @@ stages:
                     namespace: $(NAMESPACE)
                     command: apply
                     arguments: -f deploymentfile/auth-deployment.yaml
+
+                - task: Kubernetes@1
+                  displayName: Verify Rollout
+                  inputs:
+                    connectionType: Kubernetes Service Connection
+                    kubernetesServiceEndpoint: kubernetes-sc
+                    namespace: $(NAMESPACE)
+                    command: rollout
+                    arguments: status deployment/auth-service --timeout=300s
