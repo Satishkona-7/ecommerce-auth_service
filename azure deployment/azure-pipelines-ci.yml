@@ -1,9 +1,10 @@
-trigger:
-  branches:
-    include:
-      - Dev
-      - sandbox
-      - main
+# trigger:
+#   branches:
+#     include:
+#       - Dev
+#       - sandbox
+#       - main
+trigger: none
 
 pr: none
 
@@ -55,3 +56,12 @@ steps:
 - script: |
     docker push flipkart.azurecr.io/$(imageRepository):$(tag)
   displayName: Push Image
+# Save image tag for CD pipeline
+- script: |
+    echo "flipkart.azurecr.io/$(imageRepository):$(tag)" > image-tag.txt
+  displayName: Save Image Reference
+
+# Publish artifact
+- publish: image-tag.txt
+  artifact: image-tag
+  displayName: Publish Image Tag Artifact

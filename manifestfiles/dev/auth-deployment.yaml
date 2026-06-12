@@ -1,7 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
+
 metadata:
-  name: auth-service
+  name: auth-service-dev
+  namespace: dev
+
 spec:
   replicas: 1
 
@@ -17,11 +20,17 @@ spec:
     spec:
       containers:
       - name: auth-service
+
         image: IMAGE_PLACEHOLDER
 
         ports:
         - containerPort: 8003
 
-        envFrom:
-        - secretRef:
-            name: auth-secret
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
