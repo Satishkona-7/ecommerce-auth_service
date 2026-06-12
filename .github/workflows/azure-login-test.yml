@@ -21,6 +21,18 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Verify Login
+      - name: Verify Azure Resources
         run: |
           az account show
+      
+          echo "===== ACR ====="
+          az acr show --name ecommerce7
+      
+          echo "===== AKS ====="
+          az aks show \
+            --resource-group main \
+            --name test
+      
+          echo "===== KEYVAULT ====="
+          az keyvault show \
+            --name ecommerce7
